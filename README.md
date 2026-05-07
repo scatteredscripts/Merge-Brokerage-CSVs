@@ -1,9 +1,9 @@
 # Merge-Brokerage-CSVs
 If you need to pull Vanguard and Fidelity holdings together in a spreadsheet, this script might help you. You will need to download csv files from vanguard.com and fidelity.com. The script imports Vanguard and Fidelity assets from those csv files, and prompts you for additional cash holdings. Finally, it generates a new CombinedVanguardFidelityCash.csv file with holdings from both brokerages, and attempts to determine the balance of stocks vs bonds vs cash.
 
-Usage: mergebroker.py vanguardfile fidelityfile
+Usage: mergebroker.py  vanguardfile  fidelityfile
 
-  e.g: mergebroker.py OfxDownload.csv Portfolio_Positions_Jan-16-2026.csv
+  e.g: mergebroker.py  OfxDownload.csv  Portfolio_Positions_Jan-16-2026.csv
 
 NOTE: both arguments must be CSV files from their respective brokerages. As of this writing, to download these:
 
