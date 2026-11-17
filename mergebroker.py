@@ -4,10 +4,12 @@
 #  list all imported assets together in a new file, and determine balance of stocks vs bonds vs cash.
 # Usage: mergebroker.py vanguardfile fidelityfile
 #   e.g: mergebroker.py OfxDownload.csv Portfolio_Positions_Jan-16-2026.csv
-# NOTE: both files must be CSV files from their respective brokerages. As of this writing, to download these:
+# NOTE: both arguments must be CSV files from their respective brokerages. As of this writing, to download these:
 #  On vanguard.com, go to Holdings > Download Center > specify CSV, and use any date range (dated transactions will be ignored)
 #  On fidelity.com, go into Accounts > Positions tab > open the 3-dot menu > select Download
 # Requires AssetClassLookupTable.csv to identify asset classes for each symbol (e.g. VTSAX = US Stock)
+# 20261117: changed Fidelity column names from 'Account Name' to 'Account name', 'Account Number' to 'Account number' etc to 
+#  adapt to Fidelity's csv file changes in column name capitalization *eyeroll*
 
 import pandas # csv grokking tool, had to python3 -m pip install pandas from limited account first
 import os
@@ -16,9 +18,9 @@ import sys # to parse inputs of Vanguard csv (1st argument) and Fidelity csv fil
 # General plan
 # Start with vanguard csv file
 #   add column 'Brokerage' at beginning, all vals = 'Vanguard'
-#   add column 'Account Name', all vals = 'Vanguard Brokerage Acct'
-#   rename column 'Total Value' to 'Current Value' to match Fidelity's naming convention
-#   vanguardcsv.to_csv(tmpfile,columns=['Brokerage','Account Name','Account Number','Symbol', 'Current Value'])
+#   add column 'Account name', all vals = 'Vanguard Brokerage Acct'
+#   rename column 'Total Value' to 'Current value' to match Fidelity's naming convention
+#   vanguardcsv.to_csv(tmpfile,columns=['Brokerage','Account name','Account number','Symbol', 'Current value'])
 # Repeat steps for Fidelity csv file
 # Do some math to count calculate subtotals and percentages
 
@@ -28,12 +30,12 @@ vangfilename = sys.argv[1] # Vanguard file MUST be the 1st argument
 vangframe = pandas.read_csv(vangfilename, on_bad_lines='skip', index_col=False) 
 #    Add column for Brokerage and set all its values to 'Vanguard'
 vangframe['Brokerage'] = 'Vanguard' # add a column for Brokerage e.g. Vanguard vs Fidelity
-#    Add column for Account Name (to match the column in Fidelity csv file)
-vangframe['Account Name'] = 'Vanguard Brokerage Acct' 
+#    Add column for Account name (to match the column in Fidelity csv file)
+vangframe['Account name'] = 'Vanguard Brokerage Acct' 
 #    rename the value column for consistency with Fidelity file
-vangframe.rename(columns = {"Total Value": "Current Value"}, inplace = True) 
+vangframe.rename(columns = {"Total Value": "Current value"}, inplace = True) 
 #    Create frame from selected columns per https://pandas.pydata.org/docs/getting_started/intro_tutorials/03_subset_data.html
-selectedVangframe = vangframe[["Brokerage", "Account Name", "Account Number", "Symbol", "Investment Name", "Current Value"]]
+selectedVangframe = vangframe[["Brokerage", "Account name", "Account Number", "Symbol", "Investment Name", "Current value"]]
 print("\nImported Vanguard data:\n",selectedVangframe)
 
 # Next, process Fidelity csv file
@@ -45,9 +47,9 @@ fidelframe['Brokerage'] = 'Fidelity' # add a column for Brokerage e.g. Vanguard 
 #    Rename 'Description' column to 'Investment Name' to match Vanguard format
 fidelframe.rename(columns = {"Description": "Investment Name"}, inplace = True)
 #    Remove text disclaimer at the end and other non-data rows
-fidelframe.dropna(subset=['Account Name','Current Value'],inplace=True) # drop rows with missing Account Number or Current Value data, i.e. the text fluff at the end of the file
+fidelframe.dropna(subset=['Account name','Current value'],inplace=True) # drop rows with missing Account number or Current value data, i.e. the text fluff at the end of the file
 #    Create frame from selected columns per https://pandas.pydata.org/docs/getting_started/intro_tutorials/03_subset_data.html
-selectedFidelframe = fidelframe[["Brokerage", "Account Name", "Account Number", "Symbol", "Investment Name", "Current Value"]]
+selectedFidelframe = fidelframe[["Brokerage", "Account name", "Account number", "Symbol", "Investment Name", "Current value"]]
 print("\nImported Fidelity data:\n", selectedFidelframe)
 
 # Concatenate vanguard and Fidelity selected frames per https://pandas.pydata.org/docs/user_guide/merging.html#concat
@@ -58,7 +60,7 @@ additionalCash = input("\n\nEnter additional total cash not included in Vanguard
 if not additionalCash: #if input was null i.e. user hit return
   additionalCash = 0 #set default value = 0
 additionalCash = float(additionalCash)
-cashRow = [{'Brokerage': 'Cash', 'Account Name': 'Additional Cash', 'Account Number': '999999', 'Symbol': 'CASH', 'Investment Name': 'Other cash in CDs HYSA Treasuries etc', 'Current Value': additionalCash}]
+cashRow = [{'Brokerage': 'Cash', 'Account name': 'Additional Cash', 'Account number': '999999', 'Symbol': 'CASH', 'Investment Name': 'Other cash in CDs HYSA Treasuries etc', 'Current value': additionalCash}]
 cashRowFrame = pandas.DataFrame(cashRow) #create a frame from that row
 combinedframe = pandas.concat([combinedframe, cashRowFrame], ignore_index=True) # add the row for additionalCash onto the end of combinedframe
 
@@ -104,11 +106,11 @@ for i in range(rows):
     matchingCurrentValue = matchingCurrentValue.replace("$","") # remove any dollar signs
     matchingCurrentValue = float(matchingCurrentValue)
     combinedframe.iloc[i,5] = matchingCurrentValue # fix the value in the combinedframe as well
-  # Add the current value to the subtotal for its Asset Class and Asset Subclass
+  # Add the Current value to the subtotal for its Asset Class and Asset Subclass
   subtotalsFrame.loc[matchingAssetClass, matchingAssetSubclass] = subtotalsFrame.loc[matchingAssetClass, matchingAssetSubclass] + matchingCurrentValue 
 
 # Get grand total of all assets
-grandTotal = round(sum(combinedframe['Current Value']),2)
+grandTotal = round(sum(combinedframe['Current value']),2)
 
 # calculate percentages
 percentagesFrame = round(subtotalsFrame/grandTotal * 100,2)
